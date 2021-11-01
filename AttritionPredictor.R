@@ -2,10 +2,12 @@
 # Import libraries
 library(shiny)
 library(data.table)
-library(randomForest)
+library(workflows)
+library("glmnet")
+
 
 # Read in the Lasso model
-model <- readRDS("model.rds")
+model <- readRDS("final_model.rds")
 
 
 ####################################
@@ -25,7 +27,7 @@ ui <- pageWithSidebar(
                  label = "Age", 
                  value = 5.1),
     
-    selectInput("buisness_travel", "Buisness Travels:",
+    selectInput("business_travel", "Buisness Travels:",
                 c("Doesn't travel" = "Non-Travel",
                   "Rarely travels" = "Travel_Rarely",
                   "Frequent Travels" = "Travel_Frequently")),
@@ -36,11 +38,11 @@ ui <- pageWithSidebar(
                   "Human Resources" = "Human Resources")),
     
     selectInput("education", "Education Level:",
-                c("Bac" = 1,
-                  "Bac + 2" = 2,
-                  "Bac + 3" = 3,
-                  "Bac + 4" = 4,
-                  "Bac + 5" = 5)),
+                factor( c("Bac" = "1",
+                  "Bac + 2" = "2",
+                  "Bac + 3" = "3",
+                  "Bac + 4" = "4",
+                  "Bac + 5" = "5"), levels=c("1","2","3","4","5"))),
     
     selectInput("education_field", "Education Field:",
                 c("Technical Degree" = "Technical Degree",
@@ -61,7 +63,7 @@ ui <- pageWithSidebar(
                   "Female" = "Female"
                   )),
     
-    selectInput("Job_inv", "Job involvement:",
+    selectInput("job_inv", "Job involvement:",
                 c("Not very involved" = 1,
                   "Neutral" = 2,
                   "Involved" = 3,
@@ -76,12 +78,12 @@ ui <- pageWithSidebar(
                 
                 
     selectInput("job_role", "Job Role:",
-            c( "Research Scientist "  = "Research Scientist "   ,
+            c( "Research Scientist"  = "Research Scientist"   ,
                "Laboratory Technician" = "Laboratory Technician"  ,
                "Manufacturing Director" ="Manufacturing Director" ,
                "Healthcare Representative"= "Healthcare Representative",
                "Research Director"        = "Research Director"  ,
-               "Sales Representative "    ="Sales Representative " ,
+               "Sales Representative"    ="Sales Representative" ,
                "Sales Executive"          ="Sales Executive"   ,
                "Manager"                  = "Manager"  ,
                "Human Resources"="Human Resources" )),
@@ -103,7 +105,7 @@ ui <- pageWithSidebar(
     numericInput("num_companies_worked", 
                  label = "Number of previous experiences", 
                  value = 2),
-    selectInput("overtime", "works overtime", 
+    selectInput("over_time", "works overtime", 
                 c("No" = 0 ,
                 "Yes" = 1 )),
     numericInput("total_years_working", "Total years of experience", 
@@ -148,7 +150,7 @@ server<- function(input, output, session) {
     
     df <- data.frame(
       Name = c("age",
-               "buisness_travel",
+               "business_travel",
                "department",
                "education",
                "education_field",
@@ -162,7 +164,7 @@ server<- function(input, output, session) {
                "marital_status",
                "monthly_income",
                "num_companies_worked",
-               "overtime",
+               "over_time",
                "performance_rating",
                "relationship_satisfaction",
                "stock_option_level",
@@ -173,7 +175,7 @@ server<- function(input, output, session) {
                "years_with_curr_manager",
                "total_satisfaction"),
       Value = as.character(c(input$age,
-                             input$buisness_travel,
+                             input$business_travel,
                              input$department,
                              input$education,
                              input$education_field,
@@ -187,18 +189,18 @@ server<- function(input, output, session) {
                              input$marital_stat,
                              input$monthly_income,
                              input$num_companies_worked,
-                             input$overtime,
+                             input$over_time,
                              sample(3:4,1),
                              sample(1:4,1),
                              sample(0:3,1),
-                             input$total_working_years,
+                             input$total_years_working,
                              input$work_life_balance,
                              input$years_in_curr_role,
                              input$years_since_last_promotion,
                              input$years_with_curr_manager,
                              input$total_satis
                              )),
-      stringsAsFactors = TRUE)
+      stringsAsFactors = FALSE)
     
     Attrition <- 0
     df <- rbind(df, Attrition)
